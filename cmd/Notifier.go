@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -32,6 +34,8 @@ func main() {
 	}
 
 	MESSAGE_SEND_URL := fmt.Sprintf("%s/channels/%s/messages", DISCORD_API_URL, DISCORD_BOT_CHANNEL)
+	var wg sync.WaitGroup
+	wg.Add(1)
 
 	sendMessage := func(msg string) {
 		body, _ := json.Marshal(map[string]string{
@@ -63,6 +67,12 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"status": "OK"})
 	})
 
+	go func() {
+		defer wg.Done()
+		r.Run(fmt.Sprintf("127.0.0.1:%d", port))
+	}()
+
+	time.Sleep(3 * time.Second)
 	sendMessage("init")
-	r.Run(fmt.Sprintf("127.0.0.1:%d", port))
+	wg.Wait()
 }
